@@ -113,6 +113,6 @@ postBody hour day = BL.concat
     , "&boardType=dep"
     , "&REQTrain_name="
     , "&advancedProductMode="
-    , "&GUIREQProduct_8=on"
+    , "&productsFilter=000001011"
     , "&start=Suchen"
     ]

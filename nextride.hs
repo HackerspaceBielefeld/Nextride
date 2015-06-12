@@ -20,8 +20,7 @@ import Text.HTML.TagSoup
 import Text.HTML.TagSoup.Match (anyAttr)
 
 import Data.Time.LocalTime (getZonedTime)
-import Data.Time.Format (formatTime)
-import System.Locale (defaultTimeLocale)
+import Data.Time.Format (formatTime, defaultTimeLocale)
 
 import Text.Regex.Posix
 
@@ -93,8 +92,8 @@ getDest (_:xs) = getDest xs
 now :: IO (String,String)
 now = do
     time <- getZonedTime
-    let hour = formatTime defaultTimeLocale "%H:%M"    time 
-    let day  = formatTime defaultTimeLocale "%d.%m.%y" time 
+    let hour = formatTime defaultTimeLocale "%H:%M"    time
+    let day  = formatTime defaultTimeLocale "%d.%m.%y" time
     return (hour,day)
 
 url :: String

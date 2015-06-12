@@ -1,0 +1,16 @@
+dist
+bin
+cabal-dev
+*.o
+*.dyn_o
+*.hi
+*.dyn_hi
+*.chi
+*.chs.h
+*.swp
+*.swo
+.virtualenv
+.hsenv
+.cabal-sandbox/
+cabal.sandbox.config
+cabal.config

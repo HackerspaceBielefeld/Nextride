@@ -28,12 +28,12 @@ main = do
               $ concatMap getRows pages
     BC.putStrLn "]"
 
-fetchPage :: String -> IO BL.ByteString
+fetchPage :: BL.ByteString -> IO BL.ByteString
 fetchPage s = do
     (hour, time) <- now
     fmap (rspBody . snd) $ browse $ defaultBrowser s url hour time
 
-defaultBrowser :: String -> String -> String -> String ->
+defaultBrowser :: BL.ByteString -> String -> String -> String ->
     BrowserAction (HandleStream BL.ByteString) (URI, Response BL.ByteString)
 defaultBrowser s u h t = do
     setAllowRedirects True
@@ -75,7 +75,7 @@ getTrain [] = ""
 getTrain (TagClose "tr":_) = ""
 getTrain (TagOpen "a" _:TagText text:_) = BL.tail text =~ rx where
     rx :: BL.ByteString
-    rx = "[0-9]+"
+    rx = "\\w*[0-9]+"
 getTrain (_:xs) = getTrain xs
 
 getDest :: [Tag BL.ByteString] -> BL.ByteString
@@ -93,11 +93,11 @@ now = do
     let day  = formatTime defaultTimeLocale "%d.%m.%y" time
     return (hour,day)
 
-stations :: [String]
+stations :: [BL.ByteString]
 stations =
   [ "Sudbrackstra%DFe%2C+Bielefeld"
-  , "Meller Straße, Bielefeld"
-  , "Nordpark, Bielefeld"
+  , "Meller+Stra%DFe%2C+Bielefeld"
+  , "Nordpark%2C+Bielefeld"
   ]
 
 url :: String
@@ -106,9 +106,9 @@ url = "http://reiseauskunft.bahn.de/bin/bhftafel.exe/dn?ld=9698&country=DEU&rt=1
 contentType :: String
 contentType = "application/x-www-form-urlencode"
 
-postBody :: String -> String -> String -> BL.ByteString
+postBody :: BL.ByteString -> String -> String -> BL.ByteString
 postBody station hour day = BL.concat
-    [ "input=" , BC.pack station
+    [ "input=" , station
     , "&date=" , BC.pack day
     , "&time=" , BC.pack hour
     , "&boardType=dep"

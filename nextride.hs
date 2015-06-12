@@ -1,5 +1,5 @@
 {-
-Copyright (c) 2013, Juergen Peters <taulmarill@xgn.de>
+Copyright (c) 2013-2015, Juergen Peters <taulmarill@xgn.de>
 
 Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted, provided that the above copyright notice and this permission notice appear in all copies.
 
@@ -12,6 +12,8 @@ module Main where
 
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.ByteString.Lazy.Char8 as BC
+import Data.List (sortBy)
+import Data.Ord (comparing)
 
 import Network.Browser
 import Network.HTTP
@@ -27,10 +29,11 @@ import Text.Regex.Posix
 main :: IO ()
 main = do
     BC.putStr "["
-    mapM_ (\s -> do
-      body <- fetchPage s
-      BC.putStr $ BL.intercalate "," $ map formatRow $ getRows body
-      ) stations
+    pages <- mapM fetchPage stations
+    BC.putStr $ BL.intercalate ","
+              $ map formatRow
+              $ sortBy (comparing getTime)
+              $ concatMap getRows pages
     BC.putStrLn "]"
 
 fetchPage :: String -> IO BL.ByteString
@@ -44,7 +47,7 @@ defaultBrowser s u h t = do
     setAllowRedirects True
     setOutHandler $ const( return () )
     let typ  = contentType
-    let body = postBody h t
+    let body = postBody s h t
     case parseURI u of
         Nothing  -> error ("Not a valid URL - " ++ u)
         Just uri -> request $ req { rqBody=body } where
@@ -101,6 +104,8 @@ now = do
 stations :: [String]
 stations =
   [ "Sudbrackstra%DFe%2C+Bielefeld"
+  , "Meller Straße, Bielefeld"
+  , "Nordpark, Bielefeld"
   ]
 
 url :: String
@@ -109,10 +114,9 @@ url = "http://reiseauskunft.bahn.de/bin/bhftafel.exe/dn?ld=9698&country=DEU&rt=1
 contentType :: String
 contentType = "application/x-www-form-urlencode"
 
-postBody :: String -> String -> BL.ByteString
-postBody hour day = BL.concat
-    [ "input=Sudbrackstra%DFe%2C+Bielefeld"
-    --, "&REQ0JourneyStopsSID=A%3D1%40O%3DSudbrackstra%DFe%2C+Bielefeld%40X%3D8538736%40Y%3D52035883%40U%3D80%40L%3D000925626%40B%3D1%40p%3D1363765172%40"
+postBody :: String -> String -> String -> BL.ByteString
+postBody station hour day = BL.concat
+    [ "input=" , BC.pack station
     , "&date=" , BC.pack day
     , "&time=" , BC.pack hour
     , "&boardType=dep"

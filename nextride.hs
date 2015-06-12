@@ -26,28 +26,30 @@ import Text.Regex.Posix
 
 main :: IO ()
 main = do
-    body <- fetchPage
     BC.putStr "["
-    BC.putStr $ BL.intercalate "," $ map formatRow $ getRows body
+    mapM_ (\s -> do
+      body <- fetchPage s
+      BC.putStr $ BL.intercalate "," $ map formatRow $ getRows body
+      ) stations
     BC.putStrLn "]"
 
-fetchPage :: IO BL.ByteString
-fetchPage = do 
+fetchPage :: String -> IO BL.ByteString
+fetchPage s = do
     (hour, time) <- now
-    fmap (rspBody . snd) $ browse $ defaultBrowser url hour time
+    fmap (rspBody . snd) $ browse $ defaultBrowser s url hour time
 
-defaultBrowser :: String -> String -> String -> 
+defaultBrowser :: String -> String -> String -> String ->
     BrowserAction (HandleStream BL.ByteString) (URI, Response BL.ByteString)
-defaultBrowser u h t = do
+defaultBrowser s u h t = do
     setAllowRedirects True
     setOutHandler $ const( return () )
     let typ  = contentType
     let body = postBody h t
-    case parseURI u of 
+    case parseURI u of
         Nothing  -> error ("Not a valid URL - " ++ u)
         Just uri -> request $ req { rqBody=body } where
             req :: Request BL.ByteString
-            req = replaceHeader HdrContentType typ 
+            req = replaceHeader HdrContentType typ
                 . replaceHeader HdrContentLength (show $ BL.length body)
                 $ mkRequest POST uri
 
@@ -61,7 +63,7 @@ isRow (TagOpen "tr" attr) = anyAttr testAttr attr where
 isRow _                   = False
 
 formatRow :: [Tag BL.ByteString] -> BL.ByteString
-formatRow a = BL.concat 
+formatRow a = BL.concat
     [ "{'line':'"     , getTrain a , "',"
     , "'direction':'" , getDest a  , "',"
     , "'departure':'" , getTime a  , "'}"
@@ -96,9 +98,13 @@ now = do
     let day  = formatTime defaultTimeLocale "%d.%m.%y" time
     return (hour,day)
 
+stations :: [String]
+stations =
+  [ "Sudbrackstra%DFe%2C+Bielefeld"
+  ]
+
 url :: String
-url = 
-    "http://reiseauskunft.bahn.de/bin/bhftafel.exe/dn?ld=9698&country=DEU&rt=1&"
+url = "http://reiseauskunft.bahn.de/bin/bhftafel.exe/dn?ld=9698&country=DEU&rt=1&"
 
 contentType :: String
 contentType = "application/x-www-form-urlencode"
@@ -106,7 +112,7 @@ contentType = "application/x-www-form-urlencode"
 postBody :: String -> String -> BL.ByteString
 postBody hour day = BL.concat
     [ "input=Sudbrackstra%DFe%2C+Bielefeld"
-    , "&REQ0JourneyStopsSID=A%3D1%40O%3DSudbrackstra%DFe%2C+Bielefeld%40X%3D8538736%40Y%3D52035883%40U%3D80%40L%3D000925626%40B%3D1%40p%3D1363765172%40"
+    --, "&REQ0JourneyStopsSID=A%3D1%40O%3DSudbrackstra%DFe%2C+Bielefeld%40X%3D8538736%40Y%3D52035883%40U%3D80%40L%3D000925626%40B%3D1%40p%3D1363765172%40"
     , "&date=" , BC.pack day
     , "&time=" , BC.pack hour
     , "&boardType=dep"

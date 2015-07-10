@@ -2,15 +2,16 @@
 
 module Main where
 
-import qualified Data.ByteString.Lazy as BL
-import qualified Data.ByteString.Lazy.Char8 as BC
+import qualified Data.ByteString as BL
+import qualified Data.ByteString.Char8 as BC
 import Data.List (sortBy)
-import Data.Ord (comparing)
+import Data.String (IsString)
 
 import Network.Browser
 import Network.HTTP
 import Network.URI
-import Text.HTML.TagSoup
+import Text.HTML.TagSoup hiding (parseTags)
+import Text.HTML.TagSoup.Fast (parseTags)
 import Text.HTML.TagSoup.Match (anyAttr)
 
 import Data.Time.LocalTime (getZonedTime)
@@ -24,9 +25,18 @@ main = do
     pages <- mapM fetchPage stations
     BC.putStr $ BL.intercalate ","
               $ map formatRow
-              $ sortBy (comparing getTime)
+              $ sortBy (comparingTime getTime)
               $ concatMap getRows pages
     BC.putStrLn "]"
+
+comparingTime :: (IsString b, Ord b) => (a -> b) -> a -> a -> Ordering
+comparingTime f a b = compareTime (f a) (f b)
+
+compareTime :: (IsString a, Ord a) => a -> a -> Ordering
+compareTime a b
+  | a > "21:00" && b < "03:00" = LT
+  | a < "03:00" && b > "21:00" = GT
+  | otherwise                  = compare a b
 
 fetchPage :: BL.ByteString -> IO BL.ByteString
 fetchPage s = do
@@ -49,7 +59,7 @@ defaultBrowser s u h t = do
                 $ mkRequest POST uri
 
 getRows :: BL.ByteString -> [[Tag BL.ByteString]]
-getRows a = partitions isRow $ canonicalizeTags $ parseTags a
+getRows a = partitions isRow $ parseTags a
 
 isRow :: Tag BL.ByteString -> Bool
 isRow (TagOpen "tr" attr) = anyAttr testAttr attr where

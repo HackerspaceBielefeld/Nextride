@@ -20,13 +20,11 @@ import Text.Regex.Posix
 
 main :: IO ()
 main = do
-    BC.putStr "["
     pages <- mapM fetchPage stations
-    BC.putStr $ BL.intercalate ","
+    BC.putStr $ BL.intercalate "\n"
               $ map formatRow
               $ sortBy (comparingTime getTime)
               $ concatMap getRows pages
-    BC.putStrLn "]"
 
 comparingTime :: (IsString b, Ord b) => (a -> b) -> a -> a -> Ordering
 comparingTime f a b = compareTime (f a) (f b)
@@ -67,11 +65,7 @@ isRow (TagOpen "tr" attr) = anyAttr testAttr attr where
 isRow _                   = False
 
 formatRow :: [Tag BL.ByteString] -> BL.ByteString
-formatRow a = BL.concat
-    [ "{'line':'"     , getTrain a , "',"
-    , "'direction':'" , getDest a  , "',"
-    , "'departure':'" , getTime a  , "'}"
-    ]
+formatRow a = BL.concat [ getTime a, ": ", getTrain a, " -> ", getDest a ]
 
 getTime :: [Tag BL.ByteString] -> BL.ByteString
 getTime [] = ""

@@ -10,8 +10,7 @@ import Data.String (IsString)
 import Network.Browser
 import Network.HTTP
 import Network.URI
-import Text.HTML.TagSoup hiding (parseTags)
-import Text.HTML.TagSoup.Fast (parseTags)
+import Text.HTML.TagSoup
 import Text.HTML.TagSoup.Match (anyAttr)
 
 import Data.Time.LocalTime (getZonedTime)
@@ -93,7 +92,7 @@ getDest [] = ""
 getDest (TagClose "tr":_) = ""
 getDest (TagOpen "span" _:_:TagOpen "a" _:TagText text:_) = text =~ rx where
     rx :: BL.ByteString
-    rx = "[a-z,A-Z]+"
+    rx = "\\w+"
 getDest (_:xs) = getDest xs
 
 now :: IO (String,String)

@@ -86,7 +86,7 @@ getDest [] = ""
 getDest (TagClose "tr":_) = ""
 getDest (TagOpen "span" _:_:TagOpen "a" _:TagText text:_) = text =~ rx where
     rx :: BL.ByteString
-    rx = "\\w+"
+    rx = "[a-zA-Z-]+"
 getDest (_:xs) = getDest xs
 
 now :: IO (String,String)
